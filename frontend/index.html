@@ -1,169 +1,348 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>Spark — Знакомства</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --bg: #0d0d0f; --surface: #161618; --card: #1e1e21;
-      --accent: #ff5757; --accent2: #ff9a57; --gold: #f5c842;
-      --text: #f0ede8; --muted: #6b6870; --border: rgba(255,255,255,0.06);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    :root{--bg:#0d0d0f;--surface:#161618;--card:#1e1e21;--accent:#ff5757;--accent2:#ff9a57;--gold:#f5c842;--text:#f0ede8;--muted:#6b6870;--border:rgba(255,255,255,0.06);}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+    .screen{display:none;flex:1;overflow:hidden;flex-direction:column;}
+    .screen.active{display:flex;}
+    .bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 max(8px,env(safe-area-inset-bottom));flex-shrink:0;z-index:100;}
+    .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:10px;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;text-transform:uppercase;transition:color 0.2s;}
+    .nav-btn.active{color:var(--accent);}
+    .nav-btn svg{width:22px;height:22px;}
 
-    .screen { display: none; flex: 1; overflow: hidden; flex-direction: column; }
-    .screen.active { display: flex; }
+    /* LOADING */
+    .loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:9999;gap:16px;}
+    .loading h1{font-family:'Playfair Display',serif;font-size:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 20px;font-size:14px;z-index:9998;transition:transform 0.3s;white-space:nowrap;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
 
-    .bottom-nav { display: flex; background: var(--surface); border-top: 1px solid var(--border); padding: 8px 0 max(8px, env(safe-area-inset-bottom)); flex-shrink: 0; z-index: 100; }
-    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; cursor: pointer; border: none; background: none; color: var(--muted); font-size: 10px; font-family: 'DM Sans', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; transition: color 0.2s; }
-    .nav-btn.active { color: var(--accent); }
-    .nav-btn svg { width: 22px; height: 22px; }
+    /* BUTTONS */
+    .btn-primary{padding:16px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;transition:opacity 0.2s;}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+    .btn-secondary{padding:13px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;margin-top:10px;}
+    .btn-sm{padding:10px 20px;border-radius:12px;border:none;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;flex:1;}
+    .btn-sm-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;}
+    .btn-sm-ghost{background:var(--card);border:1px solid var(--border);color:var(--muted);}
+
+    /* FORMS */
+    .form-group{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+    .form-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+    .form-input{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;width:100%;}
+    .form-input:focus{border-color:var(--accent);}
+    textarea.form-input{resize:none;min-height:80px;line-height:1.6;}
+    .gender-select{display:flex;gap:8px;}
+    .gender-opt{flex:1;padding:11px;border-radius:12px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;transition:all 0.2s;}
+    .gender-opt.selected{border-color:var(--accent);color:var(--accent);background:rgba(255,87,87,0.1);}
+    .interests-picker{display:flex;flex-wrap:wrap;gap:8px;}
+    .interest-opt{padding:8px 14px;border-radius:20px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;transition:all 0.2s;}
+    .interest-opt.selected{border-color:var(--accent);color:var(--accent);background:rgba(255,87,87,0.1);}
 
     /* ONBOARDING */
-    #onboarding { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; overflow-y: auto; }
-    #onboarding.hidden { display: none; }
-    .ob-step { display: none; flex-direction: column; min-height: 100vh; }
-    .ob-step.active { display: flex; }
+    #onboarding{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;overflow-y:auto;}
+    #onboarding.hidden{display:none;}
+    .ob-step{display:none;flex-direction:column;min-height:100vh;}
+    .ob-step.active{display:flex;}
+    .ob-welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;gap:20px;}
+    .ob-logo{font-family:'Playfair Display',serif;font-size:56px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .ob-tagline{font-size:17px;line-height:1.6;color:rgba(240,237,232,0.7);}
+    .ob-features{display:flex;flex-direction:column;gap:12px;width:100%;}
+    .ob-feature{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;}
+    .ob-feature-icon{font-size:22px;}
+    .ob-feature-text{font-size:14px;color:rgba(240,237,232,0.8);}
+    .ob-photo-step,.ob-info-step{flex:1;display:flex;flex-direction:column;padding:40px 24px 32px;overflow-y:auto;}
+    .ob-title{font-family:'Playfair Display',serif;font-size:28px;margin-bottom:6px;}
+    .ob-subtitle{font-size:14px;color:var(--muted);margin-bottom:28px;}
+    .ob-progress{display:flex;gap:6px;margin-bottom:28px;}
+    .ob-prog-dot{flex:1;height:3px;border-radius:3px;background:var(--border);transition:background 0.3s;}
+    .ob-prog-dot.done{background:var(--accent);}
+    .photo-upload-area{width:160px;height:160px;border-radius:50%;border:3px dashed rgba(255,87,87,0.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin:0 auto 28px;background:var(--card);overflow:hidden;transition:border-color 0.2s;position:relative;}
+    .photo-upload-area:hover{border-color:var(--accent);}
+    .photo-upload-area img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+    .photo-upload-area .up-icon{font-size:32px;}
+    .photo-upload-area .up-text{font-size:12px;color:var(--muted);margin-top:6px;text-align:center;}
 
-    .ob-welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; text-align: center; gap: 20px; }
-    .ob-logo { font-family: 'Playfair Display', serif; font-size: 56px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .ob-tagline { font-size: 17px; line-height: 1.6; color: rgba(240,237,232,0.7); }
-    .ob-features { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-    .ob-feature { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; }
-    .ob-feature-icon { font-size: 22px; }
-    .ob-feature-text { font-size: 14px; color: rgba(240,237,232,0.8); }
-
-    .ob-photo-step, .ob-info-step { flex: 1; display: flex; flex-direction: column; padding: 40px 24px 32px; overflow-y: auto; }
-    .ob-title { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 6px; }
-    .ob-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
-    .ob-progress { display: flex; gap: 6px; margin-bottom: 28px; }
-    .ob-prog-dot { flex: 1; height: 3px; border-radius: 3px; background: var(--border); transition: background 0.3s; }
-    .ob-prog-dot.done { background: var(--accent); }
-
-    .photo-upload-area { width: 160px; height: 160px; border-radius: 50%; border: 3px dashed rgba(255,87,87,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto 28px; background: var(--card); overflow: hidden; transition: border-color 0.2s; position: relative; }
-    .photo-upload-area:hover { border-color: var(--accent); }
-    .photo-upload-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
-    .photo-upload-area .up-icon { font-size: 32px; }
-    .photo-upload-area .up-text { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: center; }
-
-    .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
-    .form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-    .form-input { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px; color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
-    .form-input:focus { border-color: var(--accent); }
-    textarea.form-input { resize: none; min-height: 80px; line-height: 1.6; }
-    .gender-select { display: flex; gap: 8px; }
-    .gender-opt { flex: 1; padding: 11px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); color: var(--muted); font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; transition: all 0.2s; }
-    .gender-opt.selected { border-color: var(--accent); color: var(--accent); background: rgba(255,87,87,0.1); }
-    .interests-picker { display: flex; flex-wrap: wrap; gap: 8px; }
-    .interest-opt { padding: 8px 14px; border-radius: 20px; background: var(--card); border: 1px solid var(--border); color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.2s; }
-    .interest-opt.selected { border-color: var(--accent); color: var(--accent); background: rgba(255,87,87,0.1); }
-
-    .btn-primary { padding: 16px; border-radius: 16px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; font-size: 16px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { padding: 13px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%; margin-top: 10px; }
+    /* CROP */
+    .crop-modal{position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:2000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:16px;}
+    .crop-modal.show{display:flex;}
+    .crop-title{font-family:'Playfair Display',serif;font-size:20px;text-align:center;}
+    .crop-subtitle{font-size:13px;color:var(--muted);text-align:center;}
+    .crop-container{position:relative;width:280px;height:280px;overflow:hidden;border-radius:50%;border:3px solid var(--accent);flex-shrink:0;}
+    .crop-canvas{position:absolute;cursor:move;touch-action:none;}
+    .crop-zoom{display:flex;align-items:center;gap:12px;width:100%;max-width:280px;}
+    .crop-zoom input{flex:1;accent-color:var(--accent);}
+    .crop-zoom span{font-size:12px;color:var(--muted);}
+    .crop-btns{display:flex;gap:10px;width:100%;max-width:280px;}
 
     /* FEED */
-    #screen-feed { padding: 16px 16px 8px; gap: 12px; }
-    .feed-header { display: flex; align-items: center; justify-content: space-between; }
-    .feed-header h1 { font-family: 'Playfair Display', serif; font-size: 26px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .feed-scroll { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 8px; }
-    .feed-scroll::-webkit-scrollbar { display: none; }
-    .feed-empty { grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 12px; color: var(--muted); text-align: center; }
-    .feed-card { border-radius: 18px; overflow: hidden; position: relative; cursor: pointer; background: var(--card); aspect-ratio: 0.72; transition: transform 0.2s; }
-    .feed-card:active { transform: scale(0.97); }
-    .feed-card:first-child { grid-column: span 2; aspect-ratio: 1.5; }
-    .feed-card img { width: 100%; height: 100%; object-fit: cover; }
-    .feed-card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%); }
-    .feed-card-info h3 { font-size: 14px; font-weight: 600; }
-    .feed-card-info span { font-size: 12px; color: rgba(255,255,255,0.6); }
-    .feed-online { position: absolute; top: 10px; right: 10px; width: 9px; height: 9px; border-radius: 50%; background: #4ade80; border: 2px solid var(--card); }
+    #screen-feed{padding:16px 16px 8px;gap:12px;}
+    .feed-header{display:flex;align-items:center;justify-content:space-between;}
+    .feed-header h1{font-family:'Playfair Display',serif;font-size:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .feed-scroll{flex:1;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:8px;}
+    .feed-scroll::-webkit-scrollbar{display:none;}
+    .feed-empty{grid-column:span 2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:var(--muted);text-align:center;}
+    .feed-card{border-radius:18px;overflow:hidden;position:relative;cursor:pointer;background:var(--card);aspect-ratio:0.72;transition:transform 0.2s;}
+    .feed-card:active{transform:scale(0.97);}
+    .feed-card:first-child{grid-column:span 2;aspect-ratio:1.5;}
+    .feed-card img,.feed-card video{width:100%;height:100%;object-fit:cover;}
+    .feed-card-info{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(0deg,rgba(0,0,0,0.8) 0%,transparent 100%);}
+    .feed-card-info h3{font-size:14px;font-weight:600;}
+    .feed-card-info span{font-size:12px;color:rgba(255,255,255,0.6);}
+    .feed-online{position:absolute;top:10px;right:10px;width:9px;height:9px;border-radius:50%;background:#4ade80;border:2px solid rgba(0,0,0,0.3);}
+    .feed-no-photo{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);background:var(--card);}
+    .feed-no-photo span{font-size:32px;}
+    .feed-no-photo p{font-size:12px;}
+    .feed-media-count{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.6);border-radius:10px;padding:2px 8px;font-size:11px;display:flex;align-items:center;gap:4px;}
 
     /* SWIPE */
-    #screen-swipe { position: relative; align-items: center; justify-content: space-between; padding: 12px 16px 12px; }
-    .swipe-header { width: 100%; display: flex; align-items: center; justify-content: space-between; }
-    .swipe-header h1 { font-family: 'Playfair Display', serif; font-size: 22px; }
-    .match-counter { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted); }
-    .match-counter span { color: var(--accent); font-weight: 600; }
-    .cards-stack { flex: 1; position: relative; width: 100%; max-width: 360px; display: flex; align-items: center; justify-content: center; }
-    .swipe-card { position: absolute; width: 100%; height: 100%; max-height: 440px; border-radius: 24px; overflow: hidden; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-    .swipe-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-    .swipe-card-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 50%); }
-    .swipe-card-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; }
-    .swipe-card-content h2 { font-size: 24px; font-weight: 700; }
-    .swipe-card-content p { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
-    .swipe-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-    .swipe-tag { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 3px 10px; font-size: 11px; }
-    .like-indicator { position: absolute; top: 30px; left: 20px; color: #4ade80; font-weight: 700; font-size: 20px; letter-spacing: 2px; padding: 6px 16px; border-radius: 8px; border: 3px solid #4ade80; opacity: 0; transform: rotate(-15deg); transition: opacity 0.15s; }
-    .nope-indicator { position: absolute; top: 30px; right: 20px; color: var(--accent); font-weight: 700; font-size: 20px; letter-spacing: 2px; padding: 6px 16px; border-radius: 8px; border: 3px solid var(--accent); opacity: 0; transform: rotate(15deg); transition: opacity 0.15s; }
-    .swipe-actions { display: flex; gap: 16px; align-items: center; padding: 8px 0; }
-    .action-btn { border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
-    .action-btn:active { transform: scale(0.9); }
-    .btn-skip { width: 54px; height: 54px; background: var(--card); border: 1px solid var(--border); color: #f87171; }
-    .btn-like { width: 66px; height: 66px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; box-shadow: 0 8px 24px rgba(255,87,87,0.4); }
-    .btn-super { width: 54px; height: 54px; background: var(--card); border: 1px solid var(--border); color: var(--gold); }
-    .swipe-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); text-align: center; padding: 20px; }
+    #screen-swipe{position:relative;align-items:center;justify-content:space-between;padding:12px 16px 12px;}
+    .swipe-header{width:100%;display:flex;align-items:center;justify-content:space-between;}
+    .swipe-header h1{font-family:'Playfair Display',serif;font-size:22px;}
+    .match-counter{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--muted);}
+    .match-counter span{color:var(--accent);font-weight:600;}
+    .cards-stack{flex:1;position:relative;width:100%;max-width:360px;display:flex;align-items:center;justify-content:center;}
+    .swipe-card{position:absolute;width:100%;height:100%;max-height:440px;border-radius:24px;overflow:hidden;cursor:grab;user-select:none;touch-action:none;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+    .swipe-card-media{width:100%;height:100%;position:relative;}
+    .swipe-card-media img,.swipe-card-media video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+    .swipe-card-media .no-photo-bg{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--card);color:var(--muted);font-size:14px;}
+    .swipe-media-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:5;}
+    .swipe-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.4);transition:background 0.2s,width 0.2s;}
+    .swipe-dot.active{background:white;width:14px;border-radius:3px;}
+    .swipe-card-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0) 50%);pointer-events:none;}
+    .swipe-card-content{position:absolute;bottom:0;left:0;right:0;padding:16px 20px 20px;}
+    .swipe-card-content h2{font-size:22px;font-weight:700;}
+    .swipe-card-content p{font-size:13px;color:rgba(255,255,255,0.65);margin-top:3px;}
+    .swipe-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+    .swipe-tag{background:rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:11px;}
+    .swipe-music-pill{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);border-radius:20px;padding:6px 12px;margin-top:8px;max-width:100%;}
+    .swipe-music-pill .music-icon{font-size:14px;flex-shrink:0;}
+    .swipe-music-pill .music-text{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,0.85);}
+    .like-indicator{position:absolute;top:30px;left:20px;color:#4ade80;font-weight:700;font-size:20px;letter-spacing:2px;padding:6px 16px;border-radius:8px;border:3px solid #4ade80;opacity:0;transform:rotate(-15deg);transition:opacity 0.15s;z-index:10;}
+    .nope-indicator{position:absolute;top:30px;right:20px;color:var(--accent);font-weight:700;font-size:20px;letter-spacing:2px;padding:6px 16px;border-radius:8px;border:3px solid var(--accent);opacity:0;transform:rotate(15deg);transition:opacity 0.15s;z-index:10;}
+    .swipe-actions{display:flex;gap:16px;align-items:center;padding:8px 0;}
+    .action-btn{border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.15s;}
+    .action-btn:active{transform:scale(0.9);}
+    .btn-skip{width:54px;height:54px;background:var(--card);border:1px solid var(--border);color:#f87171;}
+    .btn-like{width:66px;height:66px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 8px 24px rgba(255,87,87,0.4);}
+    .btn-super{width:54px;height:54px;background:var(--card);border:1px solid var(--border);color:var(--gold);}
+    .swipe-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);text-align:center;padding:20px;}
+
+    /* PROFILE VIEWER */
+    .profile-viewer{position:fixed;inset:0;background:var(--bg);z-index:800;display:none;flex-direction:column;}
+    .profile-viewer.show{display:flex;}
+    .pv-media{position:relative;flex-shrink:0;height:55vh;background:#000;overflow:hidden;}
+    .pv-media img,.pv-media video{width:100%;height:100%;object-fit:cover;}
+    .pv-media .no-photo-full{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);}
+    .pv-media .no-photo-full span{font-size:48px;}
+    .pv-dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
+    .pv-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.4);transition:all 0.2s;}
+    .pv-dot.active{background:white;width:14px;border-radius:3px;}
+    .pv-nav-left,.pv-nav-right{position:absolute;top:0;bottom:0;width:40%;cursor:pointer;z-index:5;}
+    .pv-nav-left{left:0;}
+    .pv-nav-right{right:0;}
+    .pv-close{position:absolute;top:16px;left:16px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;color:white;font-size:18px;border:none;}
+    .pv-gradient{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(0deg,rgba(13,13,15,1),transparent);pointer-events:none;}
+    .pv-body{flex:1;overflow-y:auto;padding:16px 20px 32px;}
+    .pv-body::-webkit-scrollbar{display:none;}
+    .pv-name-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+    .pv-name{font-family:'Playfair Display',serif;font-size:26px;}
+    .pv-age{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:15px;}
+    .pv-location{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;margin-bottom:14px;}
+    .pv-bio{font-size:14px;line-height:1.7;color:rgba(240,237,232,0.75);margin-bottom:16px;}
+    .pv-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+    .pv-tag{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:13px;}
+    .pv-music-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:16px;cursor:pointer;text-decoration:none;}
+    .pv-music-cover{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--surface);}
+    .pv-music-info{flex:1;min-width:0;}
+    .pv-music-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pv-music-artist{font-size:12px;color:var(--muted);margin-top:2px;}
+    .pv-music-src{font-size:10px;color:var(--accent);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;}
+    .pv-music-icon{font-size:22px;flex-shrink:0;}
+    .pv-actions{display:flex;gap:12px;padding-top:8px;}
+    .pv-btn-like{flex:1;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+    .pv-btn-skip{width:52px;height:52px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:#f87171;}
 
     /* MATCH POPUP */
-    .match-popup { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 20px; }
-    .match-popup.show { display: flex; }
-    .match-emoji { font-size: 70px; animation: pop 0.5s ease; }
-    @keyframes pop { 0%{transform:scale(0)} 80%{transform:scale(1.1)} 100%{transform:scale(1)} }
-    .match-popup h2 { font-family: 'Playfair Display', serif; font-size: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .match-popup p { color: var(--muted); font-size: 15px; text-align: center; padding: 0 20px; }
-    .match-avatars { display: flex; gap: 16px; }
-    .match-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); }
-    .match-popup-btns { display: flex; flex-direction: column; gap: 10px; width: 260px; }
+    .match-popup{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:20px;}
+    .match-popup.show{display:flex;}
+    .match-emoji{font-size:70px;animation:pop 0.5s ease;}
+    @keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+    .match-popup h2{font-family:'Playfair Display',serif;font-size:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .match-popup p{color:var(--muted);font-size:15px;text-align:center;padding:0 20px;}
+    .match-avatars{display:flex;gap:16px;}
+    .match-avatar{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);}
+    .match-popup-btns{display:flex;flex-direction:column;gap:10px;width:260px;}
 
-    /* PROFILE */
-    #screen-profile { overflow-y: auto; padding-bottom: 16px; }
-    #screen-profile::-webkit-scrollbar { display: none; }
-    .profile-hero { position: relative; height: 300px; flex-shrink: 0; cursor: pointer; }
-    .profile-hero img { width: 100%; height: 100%; object-fit: cover; }
-    .profile-hero-gradient { position: absolute; inset: 0; background: linear-gradient(0deg, var(--bg) 0%, transparent 50%); }
-    .profile-photo-change { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 10px; text-align: center; font-size: 13px; color: white; }
-    .profile-body { padding: 0 20px; }
-    .profile-name-row { display: flex; align-items: center; justify-content: space-between; margin-top: -10px; margin-bottom: 8px; }
-    .profile-name { font-family: 'Playfair Display', serif; font-size: 28px; }
-    .profile-age { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 16px; }
-    .profile-location { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; margin-bottom: 16px; }
-    .profile-bio { font-size: 14px; line-height: 1.7; color: rgba(240,237,232,0.7); margin-bottom: 20px; }
-    .profile-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; }
-    .interests-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-    .interest-chip { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 13px; }
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; text-align: center; }
-    .stat-card .val { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .stat-card .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .edit-profile-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%; margin-bottom: 20px; }
+    /* MY PROFILE */
+    #screen-profile{overflow-y:auto;padding-bottom:16px;}
+    #screen-profile::-webkit-scrollbar{display:none;}
 
-    /* EDIT */
-    .edit-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: none; flex-direction: column; overflow-y: auto; }
-    .edit-overlay.show { display: flex; }
-    .edit-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .edit-header h2 { font-size: 18px; font-weight: 600; flex: 1; }
-    .back-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); font-size: 22px; }
-    .save-btn { padding: 8px 18px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; }
-    .edit-form { padding: 20px; display: flex; flex-direction: column; }
+    /* MEDIA GRID IN MY PROFILE */
+    .my-media-section{padding:0 20px 20px;}
+    .my-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+    .my-media-item{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;}
+    .my-media-item img,.my-media-item video{width:100%;height:100%;object-fit:cover;}
+    .my-media-item .media-type-badge{position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.6);border-radius:6px;padding:2px 6px;font-size:10px;}
+    .my-media-item .media-del{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;}
+    .my-media-item .main-badge{position:absolute;bottom:5px;left:5px;background:var(--accent);border-radius:6px;padding:2px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;}
+    .media-add-btn{aspect-ratio:1;border-radius:12px;background:var(--card);border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px;color:var(--muted);font-size:11px;transition:border-color 0.2s;}
+    .media-add-btn:hover{border-color:var(--accent);}
+    .media-add-btn span{font-size:22px;}
 
-    .loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 9999; gap: 16px; }
-    .loading h1 { font-family: 'Playfair Display', serif; font-size: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px 20px; font-size: 14px; z-index: 9998; transition: transform 0.3s; white-space: nowrap; }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    /* MUSIC SECTION */
+    .music-section{padding:0 20px 20px;}
+    .music-sources{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+    .music-source-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;}
+    .music-source-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .spotify-icon{background:#1DB954;}
+    .yandex-icon{background:#FC3F1D;}
+    .vk-icon{background:#0077FF;}
+    .music-source-info{flex:1;}
+    .music-source-title{font-size:14px;font-weight:600;}
+    .music-source-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+    .music-source-arrow{color:var(--muted);}
+    .music-current-card{display:flex;align-items:center;gap:12px;background:rgba(255,87,87,0.08);border:1px solid rgba(255,87,87,0.3);border-radius:16px;padding:14px;margin-top:10px;}
+    .music-current-cover{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--card);}
+    .music-current-info{flex:1;min-width:0;}
+    .music-current-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .music-current-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+    .music-del-btn{color:var(--muted);cursor:pointer;padding:4px;font-size:18px;}
+
+    /* MUSIC MODAL */
+    .music-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1500;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:0;}
+    .music-modal.show{display:flex;}
+    .music-modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;padding:24px 20px 40px;display:flex;flex-direction:column;gap:16px;}
+    .music-modal-title{font-family:'Playfair Display',serif;font-size:22px;text-align:center;}
+    .music-modal-sub{font-size:14px;color:var(--muted);text-align:center;}
+    .music-source-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+    .music-source-tabs::-webkit-scrollbar{display:none;}
+    .music-tab{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+    .music-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(255,87,87,0.1);}
+    .music-url-row{display:flex;gap:8px;}
+    .music-url-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
+    .music-url-input:focus{border-color:var(--accent);}
+    .music-url-btn{padding:11px 18px;border-radius:12px;background:var(--accent);border:none;color:white;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+    .music-hint{font-size:12px;color:var(--muted);line-height:1.5;}
+
+    /* PROFILE STATS/INFO */
+    .profile-hero{position:relative;height:280px;flex-shrink:0;cursor:pointer;}
+    .profile-hero img{width:100%;height:100%;object-fit:cover;}
+    .profile-hero-no-photo{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);}
+    .profile-hero-no-photo span{font-size:48px;}
+    .profile-hero-gradient{position:absolute;inset:0;background:linear-gradient(0deg,var(--bg) 0%,transparent 50%);}
+    .profile-photo-change{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);padding:10px;text-align:center;font-size:13px;color:white;}
+    .profile-body{padding:0 20px;}
+    .profile-name-row{display:flex;align-items:center;justify-content:space-between;margin-top:-10px;margin-bottom:8px;}
+    .profile-name{font-family:'Playfair Display',serif;font-size:28px;}
+    .profile-age{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:16px;}
+    .profile-location{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;margin-bottom:16px;}
+    .profile-bio{font-size:14px;line-height:1.7;color:rgba(240,237,232,0.7);margin-bottom:20px;}
+    .profile-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;}
+    .interests-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;}
+    .interest-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px;}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;}
+    .stat-card .val{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .stat-card .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+    .edit-profile-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;margin-bottom:12px;}
+
+    /* EDIT OVERLAY */
+    .edit-overlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;flex-direction:column;overflow-y:auto;}
+    .edit-overlay.show{display:flex;}
+    .edit-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .edit-header h2{font-size:18px;font-weight:600;flex:1;}
+    .back-btn{width:36px;height:36px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);font-size:22px;}
+    .save-btn{padding:8px 18px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:white;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+    .edit-form{padding:20px;display:flex;flex-direction:column;}
   </style>
 </head>
 <body>
 
 <div class="loading" id="loading"><h1>✦ Spark</h1><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- CROP MODAL -->
+<div class="crop-modal" id="cropModal">
+  <div class="crop-title">Кадрировать фото</div>
+  <div class="crop-subtitle">Двигай и масштабируй</div>
+  <div class="crop-container" id="cropContainer"><canvas class="crop-canvas" id="cropCanvas"></canvas></div>
+  <div class="crop-zoom"><span>🔍</span><input type="range" id="cropZoom" min="0.5" max="3" step="0.05" value="1" oninput="updateCropZoom(this.value)"/><span>🔎</span></div>
+  <div class="crop-btns">
+    <button class="btn-sm btn-sm-ghost" onclick="cancelCrop()">Отмена</button>
+    <button class="btn-sm btn-sm-primary" onclick="confirmCrop()">✓ Готово</button>
+  </div>
+</div>
+
+<!-- MUSIC MODAL -->
+<div class="music-modal" id="musicModal" onclick="if(event.target===this)closeMusicModal()">
+  <div class="music-modal-sheet">
+    <div class="music-modal-title">🎵 Любимая музыка</div>
+    <div class="music-modal-sub">Вставь ссылку на трек или плейлист</div>
+    <div class="music-source-tabs">
+      <button class="music-tab active" onclick="selectMusicSource('spotify',this)">🟢 Spotify</button>
+      <button class="music-tab" onclick="selectMusicSource('yandex',this)">🔴 Яндекс</button>
+      <button class="music-tab" onclick="selectMusicSource('vk',this)">🔵 ВК</button>
+      <button class="music-tab" onclick="selectMusicSource('other',this)">🎵 Другое</button>
+    </div>
+    <div id="musicHint" class="music-hint">Пример: https://open.spotify.com/track/... или ссылка на плейлист</div>
+    <div class="music-url-row">
+      <input class="music-url-input" id="musicUrlInput" type="url" placeholder="Вставь ссылку..." />
+      <button class="music-url-btn" onclick="saveMusicLink()">ОК</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Название (необязательно)</label>
+      <input class="form-input" id="musicTitleInput" type="text" placeholder="Название трека или плейлиста" maxlength="60"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Исполнитель (необязательно)</label>
+      <input class="form-input" id="musicArtistInput" type="text" placeholder="Имя исполнителя" maxlength="40"/>
+    </div>
+    <button class="btn-secondary" style="margin-top:0" onclick="closeMusicModal()">Закрыть</button>
+  </div>
+</div>
+
+<!-- PROFILE VIEWER (other person) -->
+<div class="profile-viewer" id="profileViewer">
+  <div class="pv-media" id="pvMedia">
+    <button class="pv-close" onclick="closeProfileViewer()">✕</button>
+    <div class="pv-nav-left" onclick="pvNavMedia(-1)"></div>
+    <div class="pv-nav-right" onclick="pvNavMedia(1)"></div>
+    <div class="pv-dots" id="pvDots"></div>
+    <div class="pv-gradient"></div>
+  </div>
+  <div class="pv-body">
+    <div class="pv-name-row">
+      <span class="pv-name" id="pvName">—</span>
+      <span class="pv-age" id="pvAge">—</span>
+    </div>
+    <div class="pv-location"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="pvCity">—</span></div>
+    <p class="pv-bio" id="pvBio"></p>
+    <div class="pv-tags" id="pvTags"></div>
+    <a class="pv-music-card" id="pvMusicCard" href="#" target="_blank" style="display:none">
+      <div class="pv-music-icon" id="pvMusicIcon">🎵</div>
+      <div class="pv-music-info">
+        <div class="pv-music-title" id="pvMusicTitle">—</div>
+        <div class="pv-music-artist" id="pvMusicArtist"></div>
+        <div class="pv-music-src" id="pvMusicSrc"></div>
+      </div>
+    </a>
+    <div class="pv-actions">
+      <button class="pv-btn-skip" onclick="pvSwipe('left')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="pv-btn-like" onclick="pvSwipe('right')">❤️ Нравится</button>
+    </div>
+  </div>
+</div>
 
 <!-- ONBOARDING -->
 <div id="onboarding" class="hidden">
-
   <div class="ob-step active" id="ob-step-1">
     <div class="ob-welcome">
       <div class="ob-logo">✦ Spark</div>
@@ -171,68 +350,39 @@
       <div class="ob-features">
         <div class="ob-feature"><div class="ob-feature-icon">💨</div><div class="ob-feature-text">Свайпай анкеты и ставь лайки</div></div>
         <div class="ob-feature"><div class="ob-feature-icon">🔥</div><div class="ob-feature-text">Матч когда оба понравились друг другу</div></div>
-        <div class="ob-feature"><div class="ob-feature-icon">💬</div><div class="ob-feature-text">Общайся и знакомься в Telegram</div></div>
+        <div class="ob-feature"><div class="ob-feature-icon">🎵</div><div class="ob-feature-text">Делись музыкой и фото</div></div>
       </div>
       <button class="btn-primary" onclick="goStep(2)" style="margin-top:16px">Начать знакомства ✨</button>
     </div>
   </div>
-
   <div class="ob-step" id="ob-step-2">
     <div class="ob-photo-step">
-      <div class="ob-progress">
-        <div class="ob-prog-dot done"></div>
-        <div class="ob-prog-dot done"></div>
-        <div class="ob-prog-dot"></div>
-      </div>
-      <div class="ob-title">Твоё фото</div>
+      <div class="ob-progress"><div class="ob-prog-dot done"></div><div class="ob-prog-dot done"></div><div class="ob-prog-dot"></div></div>
+      <div class="ob-title">Главное фото</div>
       <div class="ob-subtitle">Первое впечатление — самое важное 📸</div>
-      <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoFileInput').click()">
-        <img id="photoPreview" src="" style="display:none" />
+      <div class="photo-upload-area" id="photoUploadArea" onclick="triggerMediaInput('ob-main')">
+        <img id="photoPreview" src="" style="display:none"/>
         <div class="up-icon">📷</div>
         <div class="up-text">Нажми чтобы<br>добавить фото</div>
       </div>
-      <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(event)" style="display:none" />
+      <input type="file" id="photoFileInput" accept="image/*" onchange="handlePhotoSelect(event,'ob')" style="display:none"/>
       <div style="flex:1"></div>
       <button class="btn-primary" onclick="goStep(3)">Далее →</button>
       <button class="btn-secondary" onclick="goStep(3)">Пропустить</button>
     </div>
   </div>
-
   <div class="ob-step" id="ob-step-3">
     <div class="ob-info-step">
-      <div class="ob-progress">
-        <div class="ob-prog-dot done"></div>
-        <div class="ob-prog-dot done"></div>
-        <div class="ob-prog-dot done"></div>
-      </div>
+      <div class="ob-progress"><div class="ob-prog-dot done"></div><div class="ob-prog-dot done"></div><div class="ob-prog-dot done"></div></div>
       <div class="ob-title">О себе</div>
       <div class="ob-subtitle">Расскажи кто ты — это привлекает больше людей</div>
-      <div class="form-group">
-        <label class="form-label">Имя</label>
-        <input class="form-input" id="ob-name" type="text" placeholder="Твоё имя" maxlength="30" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Возраст</label>
-        <input class="form-input" id="ob-age" type="number" placeholder="Сколько тебе лет?" min="1" max="120" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Город</label>
-        <input class="form-input" id="ob-city" type="text" placeholder="Где ты живёшь?" maxlength="30" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Пол</label>
-        <div class="gender-select">
-          <button class="gender-opt" id="ob-genderM" onclick="obSelectGender('male')">👨 Мужской</button>
-          <button class="gender-opt" id="ob-genderF" onclick="obSelectGender('female')">👩 Женский</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">О себе</label>
-        <textarea class="form-input" id="ob-bio" placeholder="Чем увлекаешься? Что ищешь?..." maxlength="200"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Интересы (до 5)</label>
-        <div class="interests-picker" id="ob-interests">
+      <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="ob-name" type="text" placeholder="Твоё имя" maxlength="30"/></div>
+      <div class="form-group"><label class="form-label">Возраст</label><input class="form-input" id="ob-age" type="number" placeholder="Сколько тебе лет?" min="1" max="120"/></div>
+      <div class="form-group"><label class="form-label">Город</label><input class="form-input" id="ob-city" type="text" placeholder="Где ты живёшь?" maxlength="30"/></div>
+      <div class="form-group"><label class="form-label">Пол</label><div class="gender-select"><button class="gender-opt" id="ob-genderM" onclick="obSelectGender('male')">👨 Мужской</button><button class="gender-opt" id="ob-genderF" onclick="obSelectGender('female')">👩 Женский</button></div></div>
+      <div class="form-group"><label class="form-label">О себе</label><textarea class="form-input" id="ob-bio" placeholder="Чем увлекаешься? Что ищешь?..." maxlength="200"></textarea></div>
+      <div class="form-group"><label class="form-label">Интересы (до 5)</label>
+        <div class="interests-picker">
           <div class="interest-opt" onclick="toggleInterest(this,'🎵 Музыка')">🎵 Музыка</div>
           <div class="interest-opt" onclick="toggleInterest(this,'📚 Книги')">📚 Книги</div>
           <div class="interest-opt" onclick="toggleInterest(this,'✈️ Путешествия')">✈️ Путешествия</div>
@@ -255,47 +405,29 @@
 <!-- MAIN APP -->
 <div class="screen" id="screen-feed">
   <div class="feed-header"><h1>✦ Лента</h1></div>
-  <div class="feed-scroll" id="feedGrid">
-    <div class="feed-empty"><div style="font-size:48px">🌟</div><p>Загрузка...</p></div>
-  </div>
+  <div class="feed-scroll" id="feedGrid"><div class="feed-empty"><div style="font-size:48px">🌟</div><p>Загрузка...</p></div></div>
 </div>
 
 <div class="screen" id="screen-swipe">
-  <div class="swipe-header">
-    <h1>Поиск</h1>
-    <div class="match-counter">Сегодня: <span id="matchCount">0</span> ❤️</div>
-  </div>
-  <div class="cards-stack" id="cardsStack">
-    <div class="swipe-empty"><div style="font-size:48px">💫</div><p>Загрузка...</p></div>
-  </div>
+  <div class="swipe-header"><h1>Поиск</h1><div class="match-counter">Сегодня: <span id="matchCount">0</span> ❤️</div></div>
+  <div class="cards-stack" id="cardsStack"><div class="swipe-empty"><div style="font-size:48px">💫</div><p>Загрузка...</p></div></div>
   <div class="swipe-actions">
-    <button class="action-btn btn-skip" onclick="swipeCard('left')">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <button class="action-btn btn-like" onclick="swipeCard('right')">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    </button>
-    <button class="action-btn btn-super" onclick="swipeCard('super')">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </button>
+    <button class="action-btn btn-skip" onclick="swipeCard('left')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="action-btn btn-like" onclick="swipeCard('right')"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+    <button class="action-btn btn-super" onclick="swipeCard('super')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
   </div>
 </div>
 
 <div class="screen" id="screen-profile">
-  <div class="profile-hero" onclick="changeProfilePhoto()">
-    <img id="profileHeroImg" src="https://i.pravatar.cc/400?img=1" alt="" />
+  <div class="profile-hero" onclick="triggerMediaInput('profile-main')">
+    <img id="profileHeroImg" src="" style="display:none" alt=""/>
+    <div class="profile-hero-no-photo" id="profileNoPhoto"><span>📷</span><p>Нажми чтобы добавить фото</p></div>
     <div class="profile-hero-gradient"></div>
-    <div class="profile-photo-change">📷 Нажми чтобы изменить фото</div>
+    <div class="profile-photo-change">📷 Изменить главное фото</div>
   </div>
   <div class="profile-body">
-    <div class="profile-name-row">
-      <span class="profile-name" id="profileName">—</span>
-      <span class="profile-age" id="profileAge">—</span>
-    </div>
-    <div class="profile-location">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="profileCity">—</span>
-    </div>
+    <div class="profile-name-row"><span class="profile-name" id="profileName">—</span><span class="profile-age" id="profileAge">—</span></div>
+    <div class="profile-location"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="profileCity">—</span></div>
     <div class="stats-row">
       <div class="stat-card"><div class="val" id="statLikes">0</div><div class="lbl">Лайков</div></div>
       <div class="stat-card"><div class="val" id="statMatches">0</div><div class="lbl">Матчей</div></div>
@@ -306,30 +438,46 @@
     <div class="interests-grid" id="profileInterests"></div>
     <button class="edit-profile-btn" onclick="openEdit()">✏️ Редактировать анкету</button>
   </div>
+
+  <!-- MEDIA GALLERY -->
+  <div class="my-media-section">
+    <div class="profile-section-title" style="padding:0">Фото и видео</div>
+    <div class="my-media-grid" id="myMediaGrid"></div>
+  </div>
+
+  <!-- MUSIC -->
+  <div class="music-section">
+    <div class="profile-section-title" style="padding:0">Любимая музыка</div>
+    <div id="myMusicDisplay"></div>
+    <div class="music-sources" id="musicSources">
+      <div class="music-source-card" onclick="openMusicModal('spotify')">
+        <div class="music-source-icon spotify-icon">🎵</div>
+        <div class="music-source-info"><div class="music-source-title">Spotify</div><div class="music-source-sub">Трек или плейлист</div></div>
+        <div class="music-source-arrow">›</div>
+      </div>
+      <div class="music-source-card" onclick="openMusicModal('yandex')">
+        <div class="music-source-icon yandex-icon">🎵</div>
+        <div class="music-source-info"><div class="music-source-title">Яндекс Музыка</div><div class="music-source-sub">Трек или плейлист</div></div>
+        <div class="music-source-arrow">›</div>
+      </div>
+      <div class="music-source-card" onclick="openMusicModal('vk')">
+        <div class="music-source-icon vk-icon">🎵</div>
+        <div class="music-source-info"><div class="music-source-title">ВК Музыка</div><div class="music-source-sub">Трек или плейлист</div></div>
+        <div class="music-source-arrow">›</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-feed" onclick="switchScreen('feed')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    Лента
-  </button>
-  <button class="nav-btn" id="nav-swipe" onclick="switchScreen('swipe')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    Свайп
-  </button>
-  <button class="nav-btn" id="nav-profile" onclick="switchScreen('profile')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Профиль
-  </button>
+  <button class="nav-btn active" id="nav-feed" onclick="switchScreen('feed')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Лента</button>
+  <button class="nav-btn" id="nav-swipe" onclick="switchScreen('swipe')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Свайп</button>
+  <button class="nav-btn" id="nav-profile" onclick="switchScreen('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Профиль</button>
 </nav>
 
 <div class="match-popup" id="matchPopup">
-  <div class="match-emoji">🎉</div>
-  <h2>Это Матч!</h2>
-  <div class="match-avatars">
-    <img class="match-avatar" id="myMatchAvatar" src="" alt="" />
-    <img class="match-avatar" id="matchAvatar" src="" alt="" />
-  </div>
+  <div class="match-emoji">🎉</div><h2>Это Матч!</h2>
+  <div class="match-avatars"><img class="match-avatar" id="myMatchAvatar" src=""/><img class="match-avatar" id="matchAvatar" src=""/></div>
   <p id="matchName">Вам обоим понравились друг другу</p>
   <div class="match-popup-btns">
     <button class="btn-primary" onclick="closeMatch()">Написать сообщение</button>
@@ -338,231 +486,530 @@
 </div>
 
 <div class="edit-overlay" id="editOverlay">
-  <div class="edit-header">
-    <button class="back-btn" onclick="closeEdit()">‹</button>
-    <h2>Редактировать</h2>
-    <button class="save-btn" onclick="saveProfile()">Сохранить</button>
-  </div>
+  <div class="edit-header"><button class="back-btn" onclick="closeEdit()">‹</button><h2>Редактировать</h2><button class="save-btn" onclick="saveProfile()">Сохранить</button></div>
   <div class="edit-form">
-    <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="editName" type="text" maxlength="30" /></div>
-    <div class="form-group"><label class="form-label">Возраст</label><input class="form-input" id="editAge" type="number" min="18" max="99" /></div>
-    <div class="form-group"><label class="form-label">Город</label><input class="form-input" id="editCity" type="text" maxlength="30" /></div>
+    <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="editName" type="text" maxlength="30"/></div>
+    <div class="form-group"><label class="form-label">Возраст</label><input class="form-input" id="editAge" type="number" min="1" max="120"/></div>
+    <div class="form-group"><label class="form-label">Город</label><input class="form-input" id="editCity" type="text" maxlength="30"/></div>
     <div class="form-group"><label class="form-label">О себе</label><textarea class="form-input" id="editBio" maxlength="200"></textarea></div>
   </div>
 </div>
 
-<input type="file" id="profilePhotoInput" accept="image/*" style="display:none" onchange="handleProfilePhotoChange(event)" />
-<div class="toast" id="toast"></div>
+<input type="file" id="mediaFileInput" accept="image/*,video/*" style="display:none" onchange="handleMediaFile(event)"/>
+<input type="file" id="mainPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoSelect(event,'profile')"/>
 
 <script>
-const API = window.location.hostname === 'localhost'
-  ? 'http://localhost:8000'
-  : 'https://zetka1488-production.up.railway.app';
-
+const API = window.location.hostname==='localhost' ? 'http://localhost:8000' : 'https://zetka1488-production.up.railway.app';
 const tg = window.Telegram?.WebApp;
-if (tg) { tg.expand(); tg.setHeaderColor('#0d0d0f'); }
-
+if(tg){tg.expand();tg.setHeaderColor('#0d0d0f');}
 const tgUser = tg?.initDataUnsafe?.user;
-const myTgId = tgUser?.id || ('test_' + Math.floor(Math.random()*99999));
-const myTgName = tgUser?.first_name || 'Пользователь';
+let myTgId = tgUser?.id ? String(tgUser.id) : (localStorage.getItem('spark_uid')||(()=>{const id='anon_'+Math.floor(Math.random()*9999999);localStorage.setItem('spark_uid',id);return id;})());
+const myTgName = tgUser?.first_name||'Пользователь';
 
 let myProfile = null;
-let feedProfiles = [], swipeProfiles = [], swipeIndex = 0, matchCount = 0;
-let selectedGender = null, selectedInterests = [], photoBase64 = null;
-let activeCard = null, isDragging = false, startX = 0, startY = 0, currentX = 0;
+let feedProfiles=[], swipeProfiles=[], swipeIndex=0, matchCount=0;
+let selectedGender=null, selectedInterests=[], obPhotoBase64=null;
+let activeCard=null, isDragging=false, startX=0, startY=0, currentX=0;
+let currentSwipeMediaIdx=0;
 
-async function init() {
-  try {
-    const res = await fetch(`${API}/profile/${myTgId}`);
-    if (res.ok) {
-      myProfile = await res.json();
-      hideLoading(); renderProfile(); loadFeed(); loadSwipe(); switchScreen('feed');
-      return;
+// CROP state
+let cropImg=new Image(), cropX=0, cropY=0, cropZoom=1;
+let cropDragging=false, cropDragStartX=0, cropDragStartY=0, cropDragImgX=0, cropDragImgY=0;
+let cropTarget='ob-main';
+const CROP_SIZE=280;
+
+// Profile viewer state
+let pvProfile=null, pvMediaIdx=0;
+
+// Music state
+let currentMusicSource='spotify';
+
+// Media input target
+let mediaInputTarget='gallery';
+
+// ======================== INIT ========================
+async function init(){
+  const cached=localStorage.getItem('spark_profile_'+myTgId);
+  if(cached){
+    try{myProfile=JSON.parse(cached);hideLoading();renderProfile();loadFeed();loadSwipe();switchScreen('feed');syncProfile();return;}catch(e){}
+  }
+  try{
+    const res=await fetch(`${API}/profile/${myTgId}`);
+    if(res.ok){myProfile=await res.json();localStorage.setItem('spark_profile_'+myTgId,JSON.stringify(myProfile));hideLoading();renderProfile();loadFeed();loadSwipe();switchScreen('feed');return;}
+  }catch(e){}
+  hideLoading();showOnboarding();
+}
+
+async function syncProfile(){
+  try{
+    const res=await fetch(`${API}/profile/${myTgId}`);
+    if(res.ok){
+      const s=await res.json();
+      if(myProfile.photo&&myProfile.photo.startsWith('data:')&&!s.photo?.startsWith('data:'))s.photo=myProfile.photo;
+      if(myProfile.media&&myProfile.media.length)s.media=myProfile.media;
+      myProfile=s;
+      localStorage.setItem('spark_profile_'+myTgId,JSON.stringify(myProfile));
+      renderProfile();
     }
-  } catch(e) {}
-  hideLoading();
-  showOnboarding();
+  }catch(e){}
 }
 
-function hideLoading() {
-  const el = document.getElementById('loading');
-  el.style.opacity = '0'; el.style.transition = 'opacity 0.4s';
-  setTimeout(() => el.remove(), 400);
-}
+function hideLoading(){const el=document.getElementById('loading');el.style.opacity='0';el.style.transition='opacity 0.4s';setTimeout(()=>el.remove(),400);}
 
-function showOnboarding() {
+// ======================== ONBOARDING ========================
+function showOnboarding(){
   document.getElementById('onboarding').classList.remove('hidden');
-  document.querySelector('.bottom-nav').style.display = 'none';
-  document.getElementById('ob-name').value = myTgName;
+  document.querySelector('.bottom-nav').style.display='none';
+  document.getElementById('ob-name').value=myTgName;
+}
+function goStep(n){document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));document.getElementById('ob-step-'+n).classList.add('active');}
+function obSelectGender(g){selectedGender=g;document.getElementById('ob-genderM').classList.toggle('selected',g==='male');document.getElementById('ob-genderF').classList.toggle('selected',g==='female');}
+function toggleInterest(el,val){if(el.classList.contains('selected')){el.classList.remove('selected');selectedInterests=selectedInterests.filter(i=>i!==val);}else{if(selectedInterests.length>=5){showToast('Максимум 5 интересов');return;}el.classList.add('selected');selectedInterests.push(val);}}
+
+async function finishOnboarding(){
+  const name=document.getElementById('ob-name').value.trim();
+  const age=parseInt(document.getElementById('ob-age').value);
+  const city=document.getElementById('ob-city').value.trim();
+  const bio=document.getElementById('ob-bio').value.trim();
+  if(!name){showToast('Введи имя');return;}
+  if(!age||age<1){showToast('Введи возраст');return;}
+  if(!city){showToast('Введи город');return;}
+  if(!selectedGender){showToast('Выбери пол');return;}
+  const btn=document.querySelector('#ob-step-3 .btn-primary');
+  btn.disabled=true;btn.textContent='Сохраняем...';
+  myProfile={tg_id:myTgId,name,age,city,bio,gender:selectedGender,photo:obPhotoBase64||'',interests:selectedInterests,media:[],music:null};
+  if(obPhotoBase64)myProfile.media=[{type:'image',data:obPhotoBase64,main:true}];
+  localStorage.setItem('spark_profile_'+myTgId,JSON.stringify(myProfile));
+  try{await fetch(`${API}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(myProfile)});}catch(e){}
+  document.getElementById('onboarding').classList.add('hidden');
+  document.querySelector('.bottom-nav').style.display='flex';
+  renderProfile();loadFeed();loadSwipe();switchScreen('feed');showToast('🎉 Анкета создана!');
 }
 
-function goStep(n) {
-  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
-  document.getElementById('ob-step-' + n).classList.add('active');
-}
-
-function obSelectGender(g) {
-  selectedGender = g;
-  document.getElementById('ob-genderM').classList.toggle('selected', g === 'male');
-  document.getElementById('ob-genderF').classList.toggle('selected', g === 'female');
-}
-
-function toggleInterest(el, val) {
-  if (el.classList.contains('selected')) {
-    el.classList.remove('selected');
-    selectedInterests = selectedInterests.filter(i => i !== val);
+// ======================== CROP ========================
+function triggerMediaInput(target){
+  mediaInputTarget=target;
+  if(target==='ob-main'||target==='profile-main'){
+    document.getElementById('mainPhotoInput').click();
   } else {
-    if (selectedInterests.length >= 5) { showToast('Максимум 5 интересов'); return; }
-    el.classList.add('selected');
-    selectedInterests.push(val);
+    document.getElementById('mediaFileInput').click();
   }
 }
 
-function handlePhotoSelect(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    photoBase64 = ev.target.result;
-    const prev = document.getElementById('photoPreview');
-    prev.src = photoBase64; prev.style.display = 'block';
-    document.querySelector('.up-icon').style.display = 'none';
-    document.querySelector('.up-text').style.display = 'none';
-  };
+function handlePhotoSelect(e,ctx){
+  const file=e.target.files[0];if(!file)return;
+  cropTarget=ctx==='ob'?'ob-main':'profile-main';
+  const reader=new FileReader();
+  reader.onload=ev=>openCrop(ev.target.result);
   reader.readAsDataURL(file);
+  e.target.value='';
 }
 
-async function finishOnboarding() {
-  const name = document.getElementById('ob-name').value.trim();
-  const age = parseInt(document.getElementById('ob-age').value);
-  const city = document.getElementById('ob-city').value.trim();
-  const bio = document.getElementById('ob-bio').value.trim();
+function handleMediaFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const isVideo=file.type.startsWith('video/');
+  if(isVideo){
+    // Videos: no crop, just add directly
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      if(!myProfile.media)myProfile.media=[];
+      if(myProfile.media.length>=9){showToast('Максимум 9 медиафайлов');return;}
+      myProfile.media.push({type:'video',data:ev.target.result,main:false});
+      saveProfileLocal();
+      renderMyMediaGrid();
+      showToast('✅ Видео добавлено!');
+    };
+    reader.readAsDataURL(file);
+  } else {
+    cropTarget='gallery';
+    const reader=new FileReader();
+    reader.onload=ev=>openCrop(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+  e.target.value='';
+}
 
-  if (!name) { showToast('Введи имя'); return; }
-  if (!age || age < 1) { showToast('Введи возраст'); return; }
-  if (!city) { showToast('Введи город'); return; }
-  if (!selectedGender) { showToast('Выбери пол'); return; }
-
-  const btn = document.querySelector('#ob-step-3 .btn-primary');
-  btn.disabled = true; btn.textContent = 'Сохраняем...';
-
-  myProfile = {
-    tg_id: myTgId, name, age, city, bio,
-    gender: selectedGender,
-    photo: photoBase64 || `https://i.pravatar.cc/400?img=${Math.floor(Math.random()*70)+1}`,
-    interests: selectedInterests,
+function openCrop(src){
+  cropImg=new Image();
+  cropImg.onload=()=>{
+    cropZoom=1;cropX=-(cropImg.width-CROP_SIZE)/2;cropY=-(cropImg.height-CROP_SIZE)/2;
+    document.getElementById('cropZoom').value=1;
+    document.getElementById('cropModal').classList.add('show');
+    drawCrop();
   };
-
-  try {
-    await fetch(`${API}/profile`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(myProfile),
-    });
-  } catch(e) {}
-
-  document.getElementById('onboarding').classList.add('hidden');
-  document.querySelector('.bottom-nav').style.display = 'flex';
-  renderProfile(); loadFeed(); loadSwipe();
-  switchScreen('feed');
-  showToast('🎉 Анкета создана!');
+  cropImg.src=src;
 }
 
-function switchScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
+function drawCrop(){
+  const canvas=document.getElementById('cropCanvas');
+  const ctx=canvas.getContext('2d');
+  const w=cropImg.width*cropZoom,h=cropImg.height*cropZoom;
+  canvas.width=w;canvas.height=h;
+  canvas.style.width=w+'px';canvas.style.height=h+'px';
+  canvas.style.left=cropX+'px';canvas.style.top=cropY+'px';
+  ctx.drawImage(cropImg,0,0,w,h);
 }
 
-async function loadFeed() {
-  try {
-    const res = await fetch(`${API}/feed/${myTgId}`);
-    if (res.ok) { feedProfiles = await res.json(); }
-  } catch(e) {}
+function updateCropZoom(val){
+  const old=cropZoom;cropZoom=parseFloat(val);
+  const r=cropZoom/old,cx=CROP_SIZE/2,cy=CROP_SIZE/2;
+  cropX=cx-(cx-cropX)*r;cropY=cy-(cy-cropY)*r;drawCrop();
+}
+
+const cropContainer=document.getElementById('cropContainer');
+cropContainer.addEventListener('mousedown',e=>{cropDragging=true;cropDragStartX=e.clientX;cropDragStartY=e.clientY;cropDragImgX=cropX;cropDragImgY=cropY;});
+cropContainer.addEventListener('touchstart',e=>{cropDragging=true;cropDragStartX=e.touches[0].clientX;cropDragStartY=e.touches[0].clientY;cropDragImgX=cropX;cropDragImgY=cropY;},{passive:true});
+window.addEventListener('mousemove',e=>{if(!cropDragging)return;cropX=cropDragImgX+(e.clientX-cropDragStartX);cropY=cropDragImgY+(e.clientY-cropDragStartY);drawCrop();});
+window.addEventListener('touchmove',e=>{if(!cropDragging)return;cropX=cropDragImgX+(e.touches[0].clientX-cropDragStartX);cropY=cropDragImgY+(e.touches[0].clientY-cropDragStartY);drawCrop();},{passive:true});
+window.addEventListener('mouseup',()=>cropDragging=false);
+window.addEventListener('touchend',()=>cropDragging=false);
+function cancelCrop(){document.getElementById('cropModal').classList.remove('show');}
+
+function confirmCrop(){
+  const out=document.createElement('canvas');
+  out.width=CROP_SIZE;out.height=CROP_SIZE;
+  const ctx=out.getContext('2d');
+  ctx.drawImage(document.getElementById('cropCanvas'),-cropX,-cropY,CROP_SIZE,CROP_SIZE,0,0,CROP_SIZE,CROP_SIZE);
+  const result=out.toDataURL('image/jpeg',0.85);
+  document.getElementById('cropModal').classList.remove('show');
+
+  if(cropTarget==='ob-main'){
+    obPhotoBase64=result;
+    const prev=document.getElementById('photoPreview');prev.src=result;prev.style.display='block';
+    document.querySelector('.up-icon').style.display='none';document.querySelector('.up-text').style.display='none';
+  } else if(cropTarget==='profile-main'){
+    if(!myProfile.media)myProfile.media=[];
+    // Replace or set main photo
+    const mainIdx=myProfile.media.findIndex(m=>m.main);
+    if(mainIdx>=0)myProfile.media[mainIdx]={type:'image',data:result,main:true};
+    else myProfile.media.unshift({type:'image',data:result,main:true});
+    myProfile.photo=result;
+    document.getElementById('profileHeroImg').src=result;
+    document.getElementById('profileHeroImg').style.display='block';
+    document.getElementById('profileNoPhoto').style.display='none';
+    saveProfileLocal();renderMyMediaGrid();showToast('✅ Фото обновлено!');
+  } else {
+    // gallery
+    if(!myProfile.media)myProfile.media=[];
+    if(myProfile.media.length>=9){showToast('Максимум 9 медиафайлов');return;}
+    myProfile.media.push({type:'image',data:result,main:false});
+    saveProfileLocal();renderMyMediaGrid();showToast('✅ Фото добавлено!');
+  }
+}
+
+// ======================== MUSIC ========================
+function openMusicModal(source){
+  currentMusicSource=source;
+  document.querySelectorAll('.music-tab').forEach(t=>t.classList.remove('active'));
+  selectMusicSource(source,null);
+  const existing=myProfile?.music;
+  document.getElementById('musicUrlInput').value=existing?.url||'';
+  document.getElementById('musicTitleInput').value=existing?.title||'';
+  document.getElementById('musicArtistInput').value=existing?.artist||'';
+  document.getElementById('musicModal').classList.add('show');
+}
+
+function selectMusicSource(src,el){
+  currentMusicSource=src;
+  document.querySelectorAll('.music-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  else{const tabs=document.querySelectorAll('.music-tab');const map={spotify:0,yandex:1,vk:2,other:3};if(tabs[map[src]])tabs[map[src]].classList.add('active');}
+  const hints={spotify:'Пример: https://open.spotify.com/track/...',yandex:'Пример: https://music.yandex.ru/album/.../track/...',vk:'Пример: https://vk.com/music/track...',other:'Вставь любую ссылку на музыку'};
+  document.getElementById('musicHint').textContent=hints[src]||hints.other;
+}
+
+function closeMusicModal(){document.getElementById('musicModal').classList.remove('show');}
+
+function saveMusicLink(){
+  const url=document.getElementById('musicUrlInput').value.trim();
+  const title=document.getElementById('musicTitleInput').value.trim();
+  const artist=document.getElementById('musicArtistInput').value.trim();
+  if(!url){showToast('Вставь ссылку');return;}
+  myProfile.music={url,title:title||'Музыкальный трек',artist:artist||'',source:currentMusicSource};
+  saveProfileLocal();renderMusicSection();closeMusicModal();showToast('🎵 Музыка добавлена!');
+}
+
+function renderMusicSection(){
+  const display=document.getElementById('myMusicDisplay');
+  const sources=document.getElementById('musicSources');
+  if(myProfile?.music){
+    const icons={spotify:'🟢',yandex:'🔴',vk:'🔵',other:'🎵'};
+    const srcLabels={spotify:'Spotify',yandex:'Яндекс Музыка',vk:'ВК Музыка',other:'Музыка'};
+    display.innerHTML=`
+      <div class="music-current-card">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${icons[myProfile.music.source]||'🎵'}</div>
+        <div class="music-current-info">
+          <div class="music-current-title">${myProfile.music.title}</div>
+          <div class="music-current-sub">${myProfile.music.artist||srcLabels[myProfile.music.source]||'Музыка'}</div>
+        </div>
+        <div class="music-del-btn" onclick="deleteMusic()">✕</div>
+      </div>`;
+    sources.style.display='none';
+  } else {
+    display.innerHTML='';
+    sources.style.display='flex';
+  }
+}
+
+function deleteMusic(){myProfile.music=null;saveProfileLocal();renderMusicSection();}
+
+// ======================== MEDIA GRID ========================
+function renderMyMediaGrid(){
+  const grid=document.getElementById('myMediaGrid');
+  grid.innerHTML='';
+  const media=myProfile?.media||[];
+  media.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='my-media-item';
+    if(item.type==='video'){
+      div.innerHTML=`<video src="${item.data}" muted playsinline></video><div class="media-type-badge">🎬</div>`;
+    } else {
+      div.innerHTML=`<img src="${item.data}" alt=""/>`;
+    }
+    if(item.main)div.innerHTML+=`<div class="main-badge">ГЛАВНОЕ</div>`;
+    else div.innerHTML+=`<div class="media-del" onclick="deleteMedia(${i})">✕</div>`;
+    if(!item.main)div.onclick=e=>{if(!e.target.classList.contains('media-del'))setMainMedia(i);};
+    grid.appendChild(div);
+  });
+  // Add button
+  if(media.length<9){
+    const add=document.createElement('div');
+    add.className='media-add-btn';
+    add.innerHTML='<span>+</span>фото/видео';
+    add.onclick=()=>triggerMediaInput('gallery');
+    grid.appendChild(add);
+  }
+}
+
+function deleteMedia(i){
+  myProfile.media.splice(i,1);
+  // Update main photo
+  const main=myProfile.media.find(m=>m.main);
+  myProfile.photo=main?main.data:'';
+  saveProfileLocal();renderMyMediaGrid();updateProfileHero();
+}
+
+function setMainMedia(i){
+  myProfile.media.forEach((m,j)=>m.main=j===i);
+  myProfile.photo=myProfile.media[i].data;
+  saveProfileLocal();renderMyMediaGrid();updateProfileHero();showToast('✅ Главное фото изменено');
+}
+
+function updateProfileHero(){
+  const main=myProfile?.media?.find(m=>m.main);
+  if(main&&main.type==='image'){
+    document.getElementById('profileHeroImg').src=main.data;
+    document.getElementById('profileHeroImg').style.display='block';
+    document.getElementById('profileNoPhoto').style.display='none';
+  } else {
+    document.getElementById('profileHeroImg').style.display='none';
+    document.getElementById('profileNoPhoto').style.display='flex';
+  }
+}
+
+function saveProfileLocal(){
+  localStorage.setItem('spark_profile_'+myTgId,JSON.stringify(myProfile));
+  // Save to server in background
+  fetch(`${API}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(myProfile)}).catch(()=>{});
+}
+
+// ======================== NAV ========================
+function switchScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+}
+
+// ======================== FEED ========================
+async function loadFeed(){
+  try{const res=await fetch(`${API}/feed/${myTgId}`);if(res.ok)feedProfiles=await res.json();}catch(e){feedProfiles=[];}
   renderFeed();
 }
 
-function renderFeed() {
-  const grid = document.getElementById('feedGrid');
-  if (!feedProfiles.length) {
-    grid.innerHTML = `<div class="feed-empty"><div style="font-size:48px">🌟</div><p>Пока нет анкет</p><p style="font-size:13px;margin-top:6px">Расскажи друзьям о Spark!</p></div>`;
+function getMainMedia(profile){
+  if(profile.media&&profile.media.length){
+    return profile.media.find(m=>m.main)||profile.media[0];
+  }
+  if(profile.photo)return{type:'image',data:profile.photo};
+  return null;
+}
+
+function renderFeed(){
+  const grid=document.getElementById('feedGrid');
+  if(!feedProfiles.length){
+    grid.innerHTML=`<div class="feed-empty"><div style="font-size:48px">🌟</div><p>Пока нет анкет</p><p style="font-size:13px;margin-top:6px">Расскажи друзьям о Spark!</p></div>`;
     return;
   }
-  grid.innerHTML = '';
-  feedProfiles.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'feed-card';
-    const photo = p.photo || `https://i.pravatar.cc/400?img=${(String(p.tg_id).slice(-2)|0)%70+1}`;
-    card.innerHTML = `
-      <img src="${photo}" alt="${p.name}" loading="lazy" onerror="this.src='https://i.pravatar.cc/400?img=1'" />
-      <div class="feed-online"></div>
-      <div class="feed-card-info"><h3>${p.name}, ${p.age}</h3><span>📍 ${p.city}</span></div>`;
-    card.onclick = () => showToast(`${p.name}, ${p.age} — ${p.city}`);
+  grid.innerHTML='';
+  feedProfiles.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='feed-card';
+    const main=getMainMedia(p);
+    const mediaCount=(p.media||[]).length;
+    let mediaHtml='';
+    if(main){
+      if(main.type==='video')mediaHtml=`<video src="${main.data}" muted autoplay loop playsinline></video>`;
+      else mediaHtml=`<img src="${main.data}" alt="${p.name}" loading="lazy"/>`;
+    } else {
+      mediaHtml=`<div class="feed-no-photo"><span>📷</span><p>Нет фото</p></div>`;
+    }
+    const countBadge=mediaCount>1?`<div class="feed-media-count">📷 ${mediaCount}</div>`:'';
+    card.innerHTML=`${mediaHtml}${countBadge}<div class="feed-online"></div><div class="feed-card-info"><h3>${p.name}, ${p.age}</h3><span>📍 ${p.city}</span></div>`;
+    card.onclick=()=>openProfileViewer(p);
     grid.appendChild(card);
   });
 }
 
-async function loadSwipe() {
-  try {
-    const res = await fetch(`${API}/feed/${myTgId}`);
-    if (res.ok) { swipeProfiles = await res.json(); swipeIndex = 0; }
-  } catch(e) {}
+// ======================== PROFILE VIEWER ========================
+function openProfileViewer(profile){
+  pvProfile=profile;pvMediaIdx=0;
+  document.getElementById('profileViewer').classList.add('show');
+  renderPVMedia();
+  document.getElementById('pvName').textContent=profile.name;
+  document.getElementById('pvAge').textContent=profile.age;
+  document.getElementById('pvCity').textContent=profile.city;
+  document.getElementById('pvBio').textContent=profile.bio||'';
+  document.getElementById('pvTags').innerHTML=(profile.interests||[]).map(i=>`<div class="pv-tag">${i}</div>`).join('');
+  // Music
+  const mc=document.getElementById('pvMusicCard');
+  if(profile.music&&profile.music.url){
+    mc.style.display='flex';
+    mc.href=profile.music.url;
+    const icons={spotify:'🟢',yandex:'🔴',vk:'🔵',other:'🎵'};
+    document.getElementById('pvMusicIcon').textContent=icons[profile.music.source]||'🎵';
+    document.getElementById('pvMusicTitle').textContent=profile.music.title||'Трек';
+    document.getElementById('pvMusicArtist').textContent=profile.music.artist||'';
+    const srcLabels={spotify:'Spotify',yandex:'Яндекс Музыка',vk:'ВК Музыка'};
+    document.getElementById('pvMusicSrc').textContent=srcLabels[profile.music.source]||'Музыка';
+  } else {
+    mc.style.display='none';
+  }
+}
+
+function renderPVMedia(){
+  const container=document.getElementById('pvMedia');
+  const media=pvProfile?.media||[];
+  const mainMedia=media.length?media:pvProfile?.photo?[{type:'image',data:pvProfile.photo}]:[];
+  // Clear existing media elements (keep close/nav/dots/gradient)
+  container.querySelectorAll('img,video,.no-photo-full').forEach(el=>el.remove());
+  if(!mainMedia.length){
+    container.insertAdjacentHTML('afterbegin','<div class="no-photo-full"><span>📷</span><p>Нет фото</p></div>');
+  } else {
+    const item=mainMedia[pvMediaIdx]||mainMedia[0];
+    if(item.type==='video'){
+      const v=document.createElement('video');v.src=item.data;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;
+      container.insertAdjacentElement('afterbegin',v);
+    } else {
+      const img=document.createElement('img');img.src=item.data;img.alt='';
+      container.insertAdjacentElement('afterbegin',img);
+    }
+  }
+  // Dots
+  const dots=document.getElementById('pvDots');
+  dots.innerHTML='';
+  if(mainMedia.length>1){
+    mainMedia.forEach((_,i)=>{const d=document.createElement('div');d.className='pv-dot'+(i===pvMediaIdx?' active':'');dots.appendChild(d);});
+  }
+}
+
+function pvNavMedia(dir){
+  const media=pvProfile?.media||[];
+  const all=media.length?media:pvProfile?.photo?[{type:'image',data:pvProfile.photo}]:[];
+  pvMediaIdx=(pvMediaIdx+dir+all.length)%all.length;
+  renderPVMedia();
+}
+
+function closeProfileViewer(){document.getElementById('profileViewer').classList.remove('show');}
+
+function pvSwipe(dir){
+  closeProfileViewer();
+  // Find profile in swipe list
+  const idx=swipeProfiles.findIndex(p=>p.tg_id===pvProfile.tg_id);
+  if(idx>=0){
+    swipeIndex=idx;
+    swipeCard(dir);
+  } else {
+    // Just send like directly
+    if(dir==='right'){
+      matchCount++;document.getElementById('matchCount').textContent=matchCount;
+      fetch(`${API}/like`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_id:myTgId,to_id:pvProfile.tg_id,action:'like'})}).then(r=>r.json()).then(d=>{if(d.matched)showMatch(pvProfile);}).catch(()=>{});
+    }
+  }
+}
+
+// ======================== SWIPE ========================
+async function loadSwipe(){
+  try{const res=await fetch(`${API}/feed/${myTgId}`);if(res.ok){swipeProfiles=await res.json();swipeIndex=0;}}catch(e){swipeProfiles=[];}
   renderSwipeCards();
 }
 
-function renderSwipeCards() {
-  const stack = document.getElementById('cardsStack');
-  stack.innerHTML = '';
-  const remaining = swipeProfiles.slice(swipeIndex, swipeIndex + 3);
-  if (!remaining.length) {
-    stack.innerHTML = `<div class="swipe-empty"><div style="font-size:48px">🌟</div><p>Вы просмотрели всех!</p><p style="font-size:13px;margin-top:8px">Приходи позже</p></div>`;
+function renderSwipeCards(){
+  const stack=document.getElementById('cardsStack');
+  stack.innerHTML='';
+  const remaining=swipeProfiles.slice(swipeIndex,swipeIndex+3);
+  if(!remaining.length){
+    stack.innerHTML=`<div class="swipe-empty"><div style="font-size:48px">🌟</div><p>Вы просмотрели всех!</p><p style="font-size:13px;margin-top:8px">Приходи позже</p></div>`;
     return;
   }
-  [...remaining].reverse().forEach((p, i) => {
-    const realIndex = remaining.length - 1 - i;
-    const card = document.createElement('div');
-    card.className = 'swipe-card';
-    card.style.cssText = `transform:scale(${1-realIndex*0.04}) translateY(${realIndex*10}px);z-index:${realIndex+1};opacity:${realIndex<2?1:0.6}`;
-    const photo = p.photo || `https://i.pravatar.cc/400?img=${(String(p.tg_id).slice(-2)|0)%70+1}`;
-    const tags = (p.interests||[]).slice(0,3).map(t=>`<span class="swipe-tag">${t}</span>`).join('');
-    card.innerHTML = `
-      <img src="${photo}" alt="${p.name}" draggable="false" onerror="this.src='https://i.pravatar.cc/400?img=1'" />
-      <div class="swipe-card-overlay"></div>
-      <div class="like-indicator">ЛАЙК 💚</div>
-      <div class="nope-indicator">НЕТ 🚫</div>
-      <div class="swipe-card-content">
-        <h2>${p.name}, ${p.age}</h2>
-        <p>📍 ${p.city}</p>
-        ${p.bio?`<p style="margin-top:6px">${p.bio}</p>`:''}
-        ${tags?`<div class="swipe-tags">${tags}</div>`:''}
-      </div>`;
-    if (realIndex === 0) setupDrag(card);
+  [...remaining].reverse().forEach((p,i)=>{
+    const realIndex=remaining.length-1-i;
+    const card=document.createElement('div');
+    card.className='swipe-card';
+    card.style.cssText=`transform:scale(${1-realIndex*0.04}) translateY(${realIndex*10}px);z-index:${realIndex+1};opacity:${realIndex<2?1:0.6}`;
+    const allMedia=p.media&&p.media.length?p.media:(p.photo?[{type:'image',data:p.photo}]:[]);
+    let mediaHtml='';
+    if(!allMedia.length){
+      mediaHtml=`<div class="no-photo-bg"><span style="font-size:48px">📷</span><p>Нет фото</p></div>`;
+    } else {
+      const first=allMedia[0];
+      if(first.type==='video')mediaHtml=`<video src="${first.data}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>`;
+      else mediaHtml=`<img src="${first.data}" alt="${p.name}" draggable="false"/>`;
+    }
+    const dots=allMedia.length>1?`<div class="swipe-media-dots">${allMedia.map((_,di)=>`<div class="swipe-dot${di===0?' active':''}"></div>`).join('')}</div>`:'';
+    const tags=(p.interests||[]).slice(0,3).map(t=>`<span class="swipe-tag">${t}</span>`).join('');
+    const music=p.music?`<div class="swipe-music-pill"><span class="music-icon">🎵</span><span class="music-text">${p.music.title}${p.music.artist?' — '+p.music.artist:''}</span></div>`:'';
+    card.innerHTML=`<div class="swipe-card-media">${mediaHtml}</div>${dots}<div class="swipe-card-overlay"></div><div class="like-indicator">ЛАЙК 💚</div><div class="nope-indicator">НЕТ 🚫</div><div class="swipe-card-content"><h2>${p.name}, ${p.age}</h2><p>📍 ${p.city}</p>${p.bio?`<p style="margin-top:5px">${p.bio}</p>`:''}<div class="swipe-tags">${tags}</div>${music}</div>`;
+    if(realIndex===0){
+      setupDrag(card);
+      // Tap right side = next media
+      if(allMedia.length>1){
+        let swipeMediaIdx=0;
+        card.querySelector('.swipe-card-media').addEventListener('click',e=>{
+          if(isDragging)return;
+          const rect=card.getBoundingClientRect();
+          const x=e.clientX-rect.left;
+          if(x>rect.width*0.6){swipeMediaIdx=Math.min(swipeMediaIdx+1,allMedia.length-1);}
+          else if(x<rect.width*0.4){swipeMediaIdx=Math.max(swipeMediaIdx-1,0);}
+          const mediaEl=card.querySelector('.swipe-card-media');
+          const item=allMedia[swipeMediaIdx];
+          mediaEl.innerHTML=item.type==='video'?`<video src="${item.data}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>`:`<img src="${item.data}" alt="" draggable="false"/>`;
+          card.querySelectorAll('.swipe-dot').forEach((d,di)=>d.classList.toggle('active',di===swipeMediaIdx));
+        });
+      }
+    }
     stack.appendChild(card);
   });
-  activeCard = stack.lastElementChild;
+  activeCard=stack.lastElementChild;
 }
 
-function setupDrag(card) {
-  const onStart = e => { isDragging=true; const pt=e.touches?e.touches[0]:e; startX=pt.clientX; startY=pt.clientY; card.style.transition='none'; };
-  const onMove = e => {
-    if (!isDragging) return;
+function setupDrag(card){
+  const onStart=e=>{isDragging=true;const pt=e.touches?e.touches[0]:e;startX=pt.clientX;startY=pt.clientY;card.style.transition='none';};
+  const onMove=e=>{
+    if(!isDragging)return;
     const pt=e.touches?e.touches[0]:e;
-    currentX=pt.clientX-startX; const cy=pt.clientY-startY;
+    currentX=pt.clientX-startX;const cy=pt.clientY-startY;
     card.style.transform=`translate(${currentX}px,${cy}px) rotate(${currentX*0.08}deg)`;
-    const like=card.querySelector('.like-indicator'), nope=card.querySelector('.nope-indicator');
+    const like=card.querySelector('.like-indicator'),nope=card.querySelector('.nope-indicator');
     if(currentX>30){like.style.opacity=Math.min(currentX/100,1);nope.style.opacity=0;}
     else if(currentX<-30){nope.style.opacity=Math.min(-currentX/100,1);like.style.opacity=0;}
     else{like.style.opacity=0;nope.style.opacity=0;}
   };
-  const onEnd = () => {
-    if (!isDragging) return; isDragging=false;
-    if(currentX>80) swipeCard('right');
-    else if(currentX<-80) swipeCard('left');
-    else {
-      card.style.transition='transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275)';
-      card.style.transform='translate(0,0) rotate(0deg)';
-      card.querySelector('.like-indicator').style.opacity=0;
-      card.querySelector('.nope-indicator').style.opacity=0;
-    }
+  const onEnd=()=>{
+    if(!isDragging)return;isDragging=false;
+    if(currentX>80)swipeCard('right');
+    else if(currentX<-80)swipeCard('left');
+    else{card.style.transition='transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275)';card.style.transform='translate(0,0) rotate(0deg)';card.querySelector('.like-indicator').style.opacity=0;card.querySelector('.nope-indicator').style.opacity=0;}
     currentX=0;
   };
   card.addEventListener('mousedown',onStart);
@@ -573,102 +1020,69 @@ function setupDrag(card) {
   window.addEventListener('touchend',onEnd);
 }
 
-async function swipeCard(dir) {
-  if (!activeCard || swipeIndex >= swipeProfiles.length) return;
-  const card = activeCard;
-  const profile = swipeProfiles[swipeIndex];
-  card.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
-  if (dir === 'right' || dir === 'super') {
-    card.style.transform = dir==='super' ? 'translate(0,-120%) scale(1.1)' : 'translate(150%,-20px) rotate(30deg)';
-    matchCount++; document.getElementById('matchCount').textContent = matchCount;
-    if (dir==='super') showToast('⭐ Суперлайк!');
-    try {
-      const res = await fetch(`${API}/like`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({from_id:myTgId, to_id:profile.tg_id, action:dir==='super'?'super':'like'})
-      });
-      const data = await res.json();
-      if (data.matched) setTimeout(()=>showMatch(profile), 600);
-    } catch(e) {}
+async function swipeCard(dir){
+  if(!activeCard||swipeIndex>=swipeProfiles.length)return;
+  const card=activeCard;const profile=swipeProfiles[swipeIndex];
+  card.style.transition='transform 0.5s ease,opacity 0.5s ease';
+  if(dir==='right'||dir==='super'){
+    card.style.transform=dir==='super'?'translate(0,-120%) scale(1.1)':'translate(150%,-20px) rotate(30deg)';
+    matchCount++;document.getElementById('matchCount').textContent=matchCount;
+    if(dir==='super')showToast('⭐ Суперлайк!');
+    try{const res=await fetch(`${API}/like`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_id:myTgId,to_id:profile.tg_id,action:dir==='super'?'super':'like'})});const data=await res.json();if(data.matched)setTimeout(()=>showMatch(profile),600);}catch(e){}
   } else {
-    card.style.transform = 'translate(-150%,-20px) rotate(-30deg)';
-    try { await fetch(`${API}/like`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_id:myTgId,to_id:profile.tg_id,action:'nope'})}); } catch(e){}
+    card.style.transform='translate(-150%,-20px) rotate(-30deg)';
+    try{await fetch(`${API}/like`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_id:myTgId,to_id:profile.tg_id,action:'nope'})});}catch(e){}
   }
-  card.style.opacity='0';
-  swipeIndex++;
-  setTimeout(renderSwipeCards, 300);
+  card.style.opacity='0';swipeIndex++;
+  setTimeout(renderSwipeCards,300);
 }
 
-function showMatch(profile) {
-  document.getElementById('myMatchAvatar').src = myProfile?.photo || `https://i.pravatar.cc/100?img=1`;
-  document.getElementById('matchAvatar').src = profile.photo || `https://i.pravatar.cc/100?img=2`;
-  document.getElementById('matchName').textContent = `Ты и ${profile.name} понравились друг другу 🎉`;
+function showMatch(profile){
+  const main=getMainMedia(profile);
+  document.getElementById('myMatchAvatar').src=myProfile?.photo||'';
+  document.getElementById('matchAvatar').src=main?main.data:'';
+  document.getElementById('matchName').textContent=`Ты и ${profile.name} понравились друг другу 🎉`;
   document.getElementById('matchPopup').classList.add('show');
-  document.getElementById('statMatches').textContent = parseInt(document.getElementById('statMatches').textContent)+1;
-  if(tg) tg.HapticFeedback?.notificationOccurred('success');
+  document.getElementById('statMatches').textContent=parseInt(document.getElementById('statMatches').textContent)+1;
+  if(tg)tg.HapticFeedback?.notificationOccurred('success');
 }
-function closeMatch() { document.getElementById('matchPopup').classList.remove('show'); }
+function closeMatch(){document.getElementById('matchPopup').classList.remove('show');}
 
-function renderProfile() {
-  if (!myProfile) return;
-  document.getElementById('profileHeroImg').src = myProfile.photo || 'https://i.pravatar.cc/400?img=1';
-  document.getElementById('profileName').textContent = myProfile.name||'—';
-  document.getElementById('profileAge').textContent = myProfile.age||'—';
-  document.getElementById('profileCity').textContent = myProfile.city||'—';
-  document.getElementById('profileBio').textContent = myProfile.bio||'Расскажи о себе 🌙';
-  document.getElementById('profileInterests').innerHTML = (myProfile.interests||[]).map(i=>`<div class="interest-chip">${i}</div>`).join('')||'<span style="color:var(--muted);font-size:13px">Не выбраны</span>';
+// ======================== MY PROFILE ========================
+function renderProfile(){
+  if(!myProfile)return;
+  updateProfileHero();
+  document.getElementById('profileName').textContent=myProfile.name||'—';
+  document.getElementById('profileAge').textContent=myProfile.age||'—';
+  document.getElementById('profileCity').textContent=myProfile.city||'—';
+  document.getElementById('profileBio').textContent=myProfile.bio||'Расскажи о себе 🌙';
+  document.getElementById('profileInterests').innerHTML=(myProfile.interests||[]).map(i=>`<div class="interest-chip">${i}</div>`).join('')||'<span style="color:var(--muted);font-size:13px">Не выбраны</span>';
+  renderMyMediaGrid();
+  renderMusicSection();
   loadStats();
 }
 
-async function loadStats() {
-  try {
-    const res = await fetch(`${API}/stats/${myTgId}`);
-    if (res.ok) {
-      const s = await res.json();
-      document.getElementById('statLikes').textContent = s.likes;
-      document.getElementById('statMatches').textContent = s.matches;
-      document.getElementById('statViews').textContent = s.views;
-    }
-  } catch(e) {}
+async function loadStats(){
+  try{const res=await fetch(`${API}/stats/${myTgId}`);if(res.ok){const s=await res.json();document.getElementById('statLikes').textContent=s.likes;document.getElementById('statMatches').textContent=s.matches;document.getElementById('statViews').textContent=s.views;}}catch(e){}
 }
 
-function changeProfilePhoto() { document.getElementById('profilePhotoInput').click(); }
-
-function handleProfilePhotoChange(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    myProfile.photo = ev.target.result;
-    document.getElementById('profileHeroImg').src = myProfile.photo;
-    try { await fetch(`${API}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(myProfile)}); } catch(e){}
-    showToast('✅ Фото обновлено!');
-  };
-  reader.readAsDataURL(file);
-}
-
-function openEdit() {
-  document.getElementById('editName').value = myProfile?.name||'';
-  document.getElementById('editAge').value = myProfile?.age||'';
-  document.getElementById('editCity').value = myProfile?.city||'';
-  document.getElementById('editBio').value = myProfile?.bio||'';
+function openEdit(){
+  document.getElementById('editName').value=myProfile?.name||'';
+  document.getElementById('editAge').value=myProfile?.age||'';
+  document.getElementById('editCity').value=myProfile?.city||'';
+  document.getElementById('editBio').value=myProfile?.bio||'';
   document.getElementById('editOverlay').classList.add('show');
 }
-function closeEdit() { document.getElementById('editOverlay').classList.remove('show'); }
-
-async function saveProfile() {
-  myProfile.name = document.getElementById('editName').value.trim()||myProfile.name;
-  myProfile.age = parseInt(document.getElementById('editAge').value)||myProfile.age;
-  myProfile.city = document.getElementById('editCity').value.trim()||myProfile.city;
-  myProfile.bio = document.getElementById('editBio').value.trim();
-  try { await fetch(`${API}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(myProfile)}); } catch(e){}
-  renderProfile(); closeEdit(); showToast('✅ Профиль сохранён!');
+function closeEdit(){document.getElementById('editOverlay').classList.remove('show');}
+async function saveProfile(){
+  myProfile.name=document.getElementById('editName').value.trim()||myProfile.name;
+  myProfile.age=parseInt(document.getElementById('editAge').value)||myProfile.age;
+  myProfile.city=document.getElementById('editCity').value.trim()||myProfile.city;
+  myProfile.bio=document.getElementById('editBio').value.trim();
+  saveProfileLocal();renderProfile();closeEdit();showToast('✅ Профиль сохранён!');
 }
 
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2500);
-}
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
 
 init();
 </script>
